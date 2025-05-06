@@ -4,6 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Modal, Alert } from 'react-native';
 
+// Import LudoGameScreen - this is the only external screen component we're importing
+import LudoGameScreen from './src/screens/LudoGameScreen';
+// Add this line to import the SnakeGameScreen
+import SnakeGameScreen from './src/screens/SnakeGameScreen';
+
 // Mock data for tasks
 const TASKS = [
   { id: '1', title: 'Complete Survey', reward: 50, description: 'Answer 10 questions about your shopping habits', timeRequired: '5 min' },
@@ -14,52 +19,86 @@ const TASKS = [
 ];
 
 // Mock data for games
+// Mock data for games
 const GAMES = [
-  { id: '1', title: 'Ludo', reward: 50, image: '🎲', description: 'Play Ludo and earn rewards', minPlayTime: 120, rewardPerMinute: 5, maxScore: 100 },
-  { id: '2', title: 'Snake', reward: 40, image: '🐍', description: 'Classic Snake game', minPlayTime: 60, rewardPerMinute: 8, maxScore: 50 },
-  { id: '3', title: 'Puzzle', reward: 30, image: '🧩', description: 'Solve puzzles to earn', minPlayTime: 180, rewardPerMinute: 4, maxScore: 200 },
-  { id: '4', title: 'Tic Tac Toe', reward: 25, image: '⭕', description: 'Play Tic Tac Toe', minPlayTime: 90, rewardPerMinute: 6, maxScore: 30 },
-  { id: '5', title: 'Memory Match', reward: 35, image: '🃏', description: 'Match cards to win', minPlayTime: 150, rewardPerMinute: 5, maxScore: 80 },
-  { id: '6', title: 'Word Search', reward: 45, image: '📝', description: 'Find hidden words', minPlayTime: 200, rewardPerMinute: 4, maxScore: 150 },
-  { id: '7', title: 'Sudoku', reward: 60, image: '🔢', description: 'Solve Sudoku puzzles', minPlayTime: 300, rewardPerMinute: 3, maxScore: 100 },
-  { id: '8', title: 'Racing', reward: 40, image: '🏎️', description: 'Race to win rewards', minPlayTime: 120, rewardPerMinute: 7, maxScore: 200 },
-  { id: '9', title: 'Tetris', reward: 55, image: '🧱', description: 'Classic Tetris game', minPlayTime: 180, rewardPerMinute: 5, maxScore: 500 },
-  { id: '10', title: 'Quiz', reward: 50, image: '❓', description: 'Answer quiz questions', minPlayTime: 240, rewardPerMinute: 4, maxScore: 100 },
+  { 
+    id: 'ludo1', 
+    title: 'Ludo Classic', 
+    description: 'Play the classic Ludo board game with friends or against AI opponents.', 
+    image: '🎲', 
+    imageUrl: 'https://via.placeholder.com/150/FF5733/FFFFFF?text=Ludo',
+    reward: 50, 
+    rewardPerMinute: 5, 
+    minPlayTime: 120, // 2 minutes minimum
+    maxScore: 100 
+  },
+  { 
+    id: 'puzzle1', 
+    title: 'Puzzle Mania', 
+    description: 'Solve challenging puzzles and earn rewards for each completion.', 
+    image: '🧩', 
+    imageUrl: 'https://via.placeholder.com/150/33FF57/FFFFFF?text=Puzzle',
+    reward: 30, 
+    rewardPerMinute: 3, 
+    minPlayTime: 60, // 1 minute minimum
+    maxScore: 50 
+  },
+  { 
+    id: 'quiz1', 
+    title: 'Quiz Master', 
+    description: 'Test your knowledge with fun quizzes on various topics.', 
+    image: '❓', 
+    imageUrl: 'https://via.placeholder.com/150/5733FF/FFFFFF?text=Quiz',
+    reward: 25, 
+    rewardPerMinute: 2, 
+    minPlayTime: 90, // 1.5 minutes minimum
+    maxScore: 75 
+  },
+  { 
+    id: 'snake1', 
+    title: 'Snake Game', 
+    description: 'Control the snake to eat food and grow longer without hitting walls.', 
+    image: '🐍', 
+    imageUrl: 'https://via.placeholder.com/150/33FFFF/000000?text=Snake',
+    reward: 35, 
+    rewardPerMinute: 4, 
+    minPlayTime: 60, // 1 minute minimum
+    maxScore: 80 
+  },
 ];
 
+
 // Context for global state management
-const AppContext = React.createContext();
+export const AppContext = React.createContext();
 
 // Home Screen
 const HomeScreen = ({ navigation }) => {
-  const { balance, setBalance, gameHistory } = React.useContext(AppContext);
-
-  const GameItem = ({ item }) => {
-    // Check if game was played recently
-    const wasPlayedRecently = gameHistory.some(
-      game => game.id === item.id && 
-      (new Date().getTime() - game.endTime) < 24 * 60 * 60 * 1000 // 24 hours
-    );
-
-    return (
-      <TouchableOpacity 
-        style={[styles.gameItem, wasPlayedRecently && styles.recentlyPlayedGame]}
-        onPress={() => navigation.navigate('GameDetail', { game: item })}
-      >
-        <Text style={styles.gameEmoji}>{item.image}</Text>
-        <Text style={styles.gameTitle}>{item.title}</Text>
-        <Text style={styles.gameReward}>₹{item.reward}</Text>
-        {wasPlayedRecently && (
-          <View style={styles.playedBadge}>
-            <Text style={styles.playedBadgeText}>Played</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+  const { balance, completedTasks, gameHistory } = React.useContext(AppContext);
+  
+  // Navigate to game detail
+  const navigateToGame = (game) => {
+    // For Ludo, navigate directly to the Ludo game screen
+    if (game.id === 'ludo1') {
+      navigation.navigate('LudoGame', { game });
+    } else {
+      navigation.navigate('GameDetail', { game });
+    }
   };
-
+  
+  // Check if a game was recently played
+  const wasGameRecentlyPlayed = (gameId) => {
+    if (gameHistory.length === 0) return false;
+    
+    const game = gameHistory.find(g => g.id === gameId);
+    if (!game) return false;
+    
+    // Check if played in the last 24 hours
+    const oneDayAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
+    return game.endTime > oneDayAgo;
+  };
+  
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.balanceCard}>
         <Text style={styles.balanceTitle}>Current Balance</Text>
         <Text style={styles.balanceAmount}>₹{balance}</Text>
@@ -68,10 +107,33 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Popular Games</Text>
+      <Text style={styles.sectionTitle}>Games to Play</Text>
       <View style={styles.gamesContainer}>
         {GAMES.map(game => (
-          <GameItem key={game.id} item={game} />
+          <TouchableOpacity 
+            key={game.id}
+            style={[
+              styles.gameItem,
+              wasGameRecentlyPlayed(game.id) && styles.recentlyPlayedGame
+            ]}
+            onPress={() => navigateToGame(game)}
+          >
+            {wasGameRecentlyPlayed(game.id) && (
+              <View style={styles.playedBadge}>
+                <Text style={styles.playedBadgeText}>PLAYED</Text>
+              </View>
+            )}
+            <View style={styles.gameImageContainer}>
+              <Image 
+                source={{uri: game.imageUrl}} 
+                style={styles.gameImage}
+                defaultSource={{uri: 'https://via.placeholder.com/150/CCCCCC/FFFFFF?text=Loading'}}
+              />
+              <Text style={styles.gameEmoji}>{game.image}</Text>
+            </View>
+            <Text style={styles.gameTitle}>{game.title}</Text>
+            <Text style={styles.gameReward}>Earn up to ₹{game.reward}</Text>
+          </TouchableOpacity>
         ))}
       </View>
       
@@ -79,43 +141,45 @@ const HomeScreen = ({ navigation }) => {
         style={styles.tasksButton}
         onPress={() => navigation.navigate('Tasks')}
       >
-        <Text style={styles.tasksButtonIcon}>📚</Text>
-        <Text style={styles.tasksButtonText}>View All Tasks</Text>
+        <Text style={styles.tasksButtonIcon}>✓</Text>
+        <Text style={styles.tasksButtonText}>Complete Tasks</Text>
       </TouchableOpacity>
-
+      
       {gameHistory.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Recent Game Activity</Text>
+          <View style={styles.historyHeaderRow}>
+            <Text style={styles.sectionTitle}>Recent Games</Text>
+            <TouchableOpacity 
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate('GameHistory')}
+            >
+              <Text style={styles.viewAllButtonText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          
           <View style={styles.historyContainer}>
-            {gameHistory.slice(0, 3).map((game, index) => (
-              <View key={index} style={styles.historyItem}>
-                <View style={styles.historyItemLeft}>
-                  <Text style={styles.historyItemEmoji}>{GAMES.find(g => g.id === game.id)?.image || '🎮'}</Text>
-                  <View>
-                    <Text style={styles.historyItemTitle}>{GAMES.find(g => g.id === game.id)?.title || 'Game'}</Text>
-                    <Text style={styles.historyItemTime}>
-                      {new Date(game.endTime).toLocaleDateString()} • {Math.floor(game.playTime / 60)}m {game.playTime % 60}s
-                    </Text>
+            {gameHistory.slice(0, 3).map((game, index) => {
+              const gameDetails = GAMES.find(g => g.id === game.id) || {};
+              return (
+                <View key={index} style={[styles.historyItem, index === gameHistory.slice(0, 3).length - 1 && { borderBottomWidth: 0 }]}>
+                  <View style={styles.historyItemLeft}>
+                    <Text style={styles.historyItemEmoji}>{gameDetails.image || '🎮'}</Text>
+                    <View>
+                      <Text style={styles.historyItemTitle}>{gameDetails.title || 'Game'}</Text>
+                      <Text style={styles.historyItemTime}>{new Date(game.endTime).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.historyItemRight}>
+                    <Text style={styles.historyItemScore}>Score: {game.score}</Text>
+                    <Text style={styles.historyItemReward}>+₹{game.earnedReward}</Text>
                   </View>
                 </View>
-                <View style={styles.historyItemRight}>
-                  <Text style={styles.historyItemScore}>Score: {game.score}</Text>
-                  <Text style={styles.historyItemReward}>+₹{game.earnedReward}</Text>
-                </View>
-              </View>
-            ))}
-            {gameHistory.length > 3 && (
-              <TouchableOpacity 
-                style={styles.viewAllButton}
-                onPress={() => navigation.navigate('GameHistory')}
-              >
-                <Text style={styles.viewAllButtonText}>View All Activity</Text>
-              </TouchableOpacity>
-            )}
+              );
+            })}
           </View>
         </>
       )}
-    </ScrollView>
+    </View>
   );
 };
 
@@ -566,6 +630,20 @@ const HomeStack = () => {
         }} 
       />
       <Stack.Screen 
+        name="LudoGame"
+        component={LudoGameScreen}
+        options={{
+          title: 'Ludo Game',
+          headerStyle: {
+            backgroundColor: '#FFF8E1', // Light cream color
+          },
+          headerTintColor: '#8B4513', // Brown color
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
+      <Stack.Screen 
         name="GameHistory" 
         component={GameHistoryScreen} 
         options={{ 
@@ -578,6 +656,20 @@ const HomeStack = () => {
             fontWeight: 'bold',
           },
         }} 
+      />
+      <Stack.Screen 
+        name="SnakeGame"
+        component={SnakeGameScreen}
+        options={{
+          title: 'Snake Game',
+          headerStyle: {
+            backgroundColor: '#FFF8E1',
+          },
+          headerTintColor: '#8B4513',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
       />
     </Stack.Navigator>
   );
@@ -975,9 +1067,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  gameEmoji: {
-    fontSize: 36,
+  gameImageContainer: {
+    position: 'relative',
+    width: 80,
+    height: 80,
     marginBottom: 8,
+    borderRadius: 40,
+    overflow: 'hidden',
+  },
+  gameImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gameEmoji: {
+    position: 'absolute',
+    fontSize: 30,
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -15 }, { translateY: -15 }],
+    zIndex: 1,
   },
   gameTitle: {
     fontSize: 16,
@@ -1003,9 +1112,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  gameDetailEmoji: {
-    fontSize: 72,
+  gameDetailImageContainer: {
+    position: 'relative',
+    width: 150,
+    height: 150,
     marginBottom: 16,
+    borderRadius: 75,
+    overflow: 'hidden',
+  },
+  gameDetailImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gameDetailEmoji: {
+    position: 'absolute',
+    fontSize: 60,
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -30 }, { translateY: -30 }],
+    zIndex: 1,
   },
   gameDetailTitle: {
     fontSize: 24,

@@ -18,11 +18,25 @@ const GAMES = [
 const HomeScreen = ({ navigation }) => {
   const [balance, setBalance] = useState(0);
 
+  const navigateToGame = (game) => {
+    // For Ludo, navigate directly to the Ludo game screen
+    if (game.id === 'ludo1' || game.title === 'Ludo') {
+      navigation.navigate('LudoGame', { game });
+    } 
+    // For Snake, navigate directly to the Snake game screen
+    else if (game.id === 'snake1' || game.title === 'Snake') {
+      navigation.navigate('SnakeGame', { game });
+    }
+    else {
+      navigation.navigate('GameDetail', { game });
+    }
+  };
+
   const GameItem = ({ item }) => {
     return (
       <TouchableOpacity 
         style={styles.gameItem}
-        onPress={() => navigation.navigate('GameDetail', { game: item })}
+        onPress={() => navigateToGame(item)}
       >
         <Text style={styles.gameEmoji}>{item.image}</Text>
         <Text style={styles.gameTitle}>{item.title}</Text>
